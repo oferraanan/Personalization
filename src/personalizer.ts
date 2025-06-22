@@ -98,6 +98,16 @@ async function getEmbedding(text: string): Promise<number[]> {
   return res.data[0].embedding;
 }
 
+async function getChatReply(fullPrompt: string) {
+  const res = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: fullPrompt }],
+  });
+
+  const reply = res.choices[0].message?.content?.trim();
+  return reply;
+}
+
 function cosineSimilarity(a: number[], b: number[]): number {
   const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
   const magA = Math.sqrt(a.reduce((sum, val) => sum + val ** 2, 0));
@@ -141,15 +151,7 @@ async function addStructuredMemory(key: string, value: string, category?: string
 
 async function autoExtractAndAddMemory(prompt: string, reply: string) {
   const extractPrompt = `From the following user message and the assistant's response, extract all useful memory facts about the user.\nRespond in JSON array format, each item must include a 'key' and 'value', and optionally a 'category'.\nRespond only with the JSON array. If nothing is relevant, respond with "[]".\n\nUser: ${prompt}\nAssistant: ${reply}`;
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'user', content: extractPrompt }
-    ]
-  });
-
-  const raw = completion.choices[0].message?.content?.trim();
+  const raw = await getChatReply(extractPrompt);
   if (raw && raw !== '[]') {
     const cleaned = raw.replace(/^```(?:json)?|```$/g, '').trim();
     try {
@@ -233,12 +235,7 @@ async function respondWithMemory(query: string) {
 
   const fullPrompt = `You are a helpful assistant.\n\nUser's persistent memory:\n${memoryContext}\n\nRecent conversation:\n${historyContext}\n\nUser: ${query}`;
 
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: fullPrompt }],
-  });
-
-  const reply = res.choices[0].message?.content;
+  const reply = await getChatReply(fullPrompt);
   console.log(`\n🤖 ${reply}\n`);
 
   if (reply) {
