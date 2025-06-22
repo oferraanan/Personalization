@@ -1,6 +1,4 @@
-.idea
-.vscode
+.idea/
+node_modules/
+data/
 .env
-data
-node_modules
-
