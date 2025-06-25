@@ -104,8 +104,7 @@ async function getChatReply(fullPrompt: string) {
     messages: [{ role: 'user', content: fullPrompt }],
   });
 
-  const reply = res.choices[0].message?.content?.trim();
-  return reply;
+  return res.choices[0].message?.content?.trim();
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
